@@ -521,3 +521,35 @@ pub mod quic;
 
 /// This is the rustls manual.
 pub mod manual;
+
+struct Scope {
+    indent: usize,
+}
+
+use std::fmt;
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+static INDENT: AtomicUsize = AtomicUsize::new(0);
+
+impl Scope {
+    fn current() -> Scope {
+        Scope {
+            indent: INDENT.fetch_add(1, Ordering::Relaxed),
+        }
+    }
+}
+
+impl Drop for Scope {
+    fn drop(&mut self) {
+        INDENT.fetch_sub(1, Ordering::Relaxed);
+    }
+}
+
+impl fmt::Display for Scope {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for _ in 0..self.indent {
+            f.write_str("  ")?;
+        }
+        Ok(())
+    }
+}

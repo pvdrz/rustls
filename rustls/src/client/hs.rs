@@ -93,6 +93,9 @@ pub(super) fn start_handshake<C: CryptoProvider>(
     config: Arc<ClientConfig<C>>,
     cx: &mut ClientContext<'_>,
 ) -> NextStateOrError {
+    let scope = crate::Scope::current();
+    eprintln!("{scope}start_handshake(server_name={server_name:?})",);
+
     let mut transcript_buffer = HandshakeHashBuffer::new();
     if config
         .client_auth_cert_resolver
@@ -199,6 +202,9 @@ fn emit_client_hello_for_retry<C: CryptoProvider>(
     mut input: ClientHelloInput<C>,
     cx: &mut ClientContext<'_>,
 ) -> NextState {
+    let scope = crate::Scope::current();
+    eprintln!("{scope}emit_client_hello_for_retry()",);
+
     let config = &input.config;
     let support_tls12 = config.supports_version(ProtocolVersion::TLSv1_2) && !cx.common.is_quic();
     let support_tls13 = config.supports_version(ProtocolVersion::TLSv1_3);
@@ -477,6 +483,12 @@ pub(super) fn process_alpn_protocol(
 
 impl<C: CryptoProvider> State<ClientConnectionData> for ExpectServerHello<C> {
     fn handle(mut self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> NextStateOrError {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}ExpectServerHello::handle(m.typ={:?})",
+            m.payload.content_type()
+        );
+
         let server_hello =
             require_handshake_msg!(m, HandshakeType::ServerHello, HandshakePayload::ServerHello)?;
         trace!("We got ServerHello {:#?}", server_hello);
@@ -841,6 +853,12 @@ impl<C: CryptoProvider> ExpectServerHelloOrHelloRetryRequest<C> {
 
 impl<C: CryptoProvider> State<ClientConnectionData> for ExpectServerHelloOrHelloRetryRequest<C> {
     fn handle(self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> NextStateOrError {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}ExpectServerHelloOrHelloRetryRequest::handle(m.typ={:?})",
+            m.payload.content_type()
+        );
+
         match m.payload {
             MessagePayload::Handshake {
                 parsed:

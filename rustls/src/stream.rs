@@ -31,6 +31,8 @@ where
     /// If we're handshaking, complete all the IO for that.
     /// If we have data to write, write it all.
     fn complete_prior_io(&mut self) -> Result<()> {
+        let scope = crate::Scope::current();
+        eprintln!("{scope}Stream::complete_prior_io()");
         if self.conn.is_handshaking() {
             self.conn.complete_io(self.sock)?;
         }
@@ -50,6 +52,9 @@ where
     S: SideData,
 {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
+        let scope = crate::Scope::current();
+        eprintln!("{scope}Stream::read(buf.len={})", buf.len());
+
         self.complete_prior_io()?;
 
         // We call complete_io() in a loop since a single call may read only
@@ -90,6 +95,9 @@ where
     S: SideData,
 {
     fn write(&mut self, buf: &[u8]) -> Result<usize> {
+        let scope = crate::Scope::current();
+        eprintln!("{scope}Stream::write(buf.len={})", buf.len());
+
         self.complete_prior_io()?;
 
         let len = self.conn.writer().write(buf)?;

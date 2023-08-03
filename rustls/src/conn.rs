@@ -157,6 +157,9 @@ impl<'a> io::Read for Reader<'a> {
     /// You may learn the number of bytes available at any time by inspecting
     /// the return of [`Connection::process_new_packets`].
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        let scope = crate::Scope::current();
+        eprintln!("{scope}Reader::read(buf.len={})", buf.len());
+
         let len = self.received_plaintext.read(buf)?;
 
         if len == 0 && !buf.is_empty() {
@@ -272,6 +275,9 @@ impl<'a> io::Write for Writer<'a> {
     /// as it can.  See [`CommonState::set_buffer_limit`] to control
     /// the size of this buffer.
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let scope = crate::Scope::current();
+        eprintln!("{scope}Writer::write(buf.len={})", buf.len());
+
         self.sink.write(buf)
     }
 
@@ -371,6 +377,9 @@ impl<Data> ConnectionCommon<Data> {
         Self: Sized,
         T: io::Read + io::Write,
     {
+        let scope = crate::Scope::current();
+        eprintln!("{scope}ConnectionCommon::complete_io()");
+
         let mut eof = false;
         let mut wrlen = 0;
         let mut rdlen = 0;
@@ -472,6 +481,8 @@ impl<Data> ConnectionCommon<Data> {
     /// [`process_new_packets`]: Connection::process_new_packets
     #[inline]
     pub fn process_new_packets(&mut self) -> Result<IoState, Error> {
+        let scope = crate::Scope::current();
+        eprintln!("{scope}ConnectionCommon::process_new_packets()");
         self.core.process_new_packets()
     }
 
@@ -495,6 +506,9 @@ impl<Data> ConnectionCommon<Data> {
     /// [`process_new_packets()`]: ConnectionCommon::process_new_packets
     /// [`reader()`]: ConnectionCommon::reader
     pub fn read_tls(&mut self, rd: &mut dyn io::Read) -> Result<usize, io::Error> {
+        let scope = crate::Scope::current();
+        eprintln!("{scope}ConnectionCommon::read_tls()");
+
         if self.received_plaintext.is_full() {
             return Err(io::Error::new(
                 io::ErrorKind::Other,
@@ -517,6 +531,8 @@ impl<Data> ConnectionCommon<Data> {
     /// After this function returns, the connection buffer may not yet be fully flushed. The
     /// [`CommonState::wants_write`] function can be used to check if the output buffer is empty.
     pub fn write_tls(&mut self, wr: &mut dyn io::Write) -> Result<usize, io::Error> {
+        let scope = crate::Scope::current();
+        eprintln!("{scope}ConnectionCommon::write_tls()");
         self.sendable_tls.write_to(wr)
     }
 
@@ -688,6 +704,13 @@ impl<Data> ConnectionCore<Data> {
         msg: PlainMessage,
         state: Box<dyn State<Data>>,
     ) -> Result<Box<dyn State<Data>>, Error> {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}ConnectionCore::process_msg(msg.typ={:?}, msg.len={})",
+            msg.typ,
+            msg.payload.0.len()
+        );
+
         // Drop CCS messages during handshake in TLS1.3
         if msg.typ == ContentType::ChangeCipherSpec
             && !self

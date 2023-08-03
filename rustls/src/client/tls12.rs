@@ -661,6 +661,12 @@ struct ExpectServerDone<C: CryptoProvider> {
 
 impl<C: CryptoProvider> State<ClientConnectionData> for ExpectServerDone<C> {
     fn handle(self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> hs::NextStateOrError {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}ExpectServerDone::handle(m.typ={:?})",
+            m.payload.content_type()
+        );
+
         match m.payload {
             MessagePayload::Handshake {
                 parsed:

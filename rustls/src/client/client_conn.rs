@@ -542,6 +542,12 @@ impl<'a> WriteEarlyData<'a> {
 
 impl<'a> io::Write for WriteEarlyData<'a> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let indent = crate::Scope::current();
+        eprintln!(
+            "{indent}<WriteEarlyData as Write>::write(buf.len={})",
+            buf.len()
+        );
+
         self.sess.write_early_data(buf)
     }
 
@@ -617,6 +623,12 @@ impl ClientConnection {
     }
 
     fn write_early_data(&mut self, data: &[u8]) -> io::Result<usize> {
+        let indent = crate::Scope::current();
+        eprintln!(
+            "{indent}ClientConnection::write_early_data(data.len={})",
+            data.len()
+        );
+
         self.inner
             .core
             .data
@@ -676,6 +688,9 @@ impl ConnectionCore<ClientConnectionData> {
         extra_exts: Vec<ClientExtension>,
         proto: Protocol,
     ) -> Result<Self, Error> {
+        let scope = crate::Scope::current();
+        eprintln!("{scope}ConnectionCore::for_client(server_name={name:?})");
+
         let mut common_state = CommonState::new(Side::Client);
         common_state.set_max_fragment_size(config.max_fragment_size)?;
         common_state.protocol = proto;

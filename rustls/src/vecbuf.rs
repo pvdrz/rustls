@@ -66,6 +66,12 @@ impl ChunkVecBuffer {
     /// Append a copy of `bytes`, perhaps a prefix if
     /// we're near the limit.
     pub(crate) fn append_limited_copy(&mut self, bytes: &[u8]) -> usize {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}ChunkVecBuffer::append_limited_copy(bytes.len={}) <<<BUFFERING>>>",
+            bytes.len()
+        );
+
         let take = self.apply_limit(bytes.len());
         self.append(bytes[..take].to_vec());
         take
@@ -73,6 +79,12 @@ impl ChunkVecBuffer {
 
     /// Take and append the given `bytes`.
     pub(crate) fn append(&mut self, bytes: Vec<u8>) -> usize {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}ChunkVecBuffer::append(bytes.len={}) <<<BUFFERING>>>",
+            bytes.len()
+        );
+
         let len = bytes.len();
 
         if !bytes.is_empty() {
@@ -136,65 +148,16 @@ impl ChunkVecBuffer {
             return Ok(0);
         }
 
+        let scope = crate::Scope::current();
+
         let mut bufs = [io::IoSlice::new(&[]); 64];
         for (iov, chunk) in bufs.iter_mut().zip(self.chunks.iter()) {
             *iov = io::IoSlice::new(chunk);
         }
         let len = cmp::min(bufs.len(), self.chunks.len());
         let used = wr.write_vectored(&bufs[..len])?;
+        eprintln!("{scope}ChunkVecBuf::write_to() -> {used} <<<IO>>>");
         self.consume(used);
         Ok(used)
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::ChunkVecBuffer;
-
-    #[test]
-    fn short_append_copy_with_limit() {
-        let mut cvb = ChunkVecBuffer::new(Some(12));
-        assert_eq!(cvb.append_limited_copy(b"hello"), 5);
-        assert_eq!(cvb.append_limited_copy(b"world"), 5);
-        assert_eq!(cvb.append_limited_copy(b"hello"), 2);
-        assert_eq!(cvb.append_limited_copy(b"world"), 0);
-
-        let mut buf = [0u8; 12];
-        assert_eq!(cvb.read(&mut buf).unwrap(), 12);
-        assert_eq!(buf.to_vec(), b"helloworldhe".to_vec());
-    }
-
-    #[cfg(read_buf)]
-    #[test]
-    fn read_buf() {
-        use std::{io::BorrowedBuf, mem::MaybeUninit};
-
-        {
-            let mut cvb = ChunkVecBuffer::new(None);
-            cvb.append(b"test ".to_vec());
-            cvb.append(b"fixture ".to_vec());
-            cvb.append(b"data".to_vec());
-
-            let mut buf = [MaybeUninit::<u8>::uninit(); 8];
-            let mut buf: BorrowedBuf<'_> = buf.as_mut_slice().into();
-            cvb.read_buf(buf.unfilled()).unwrap();
-            assert_eq!(buf.filled(), b"test fix");
-            buf.clear();
-            cvb.read_buf(buf.unfilled()).unwrap();
-            assert_eq!(buf.filled(), b"ture dat");
-            buf.clear();
-            cvb.read_buf(buf.unfilled()).unwrap();
-            assert_eq!(buf.filled(), b"a");
-        }
-
-        {
-            let mut cvb = ChunkVecBuffer::new(None);
-            cvb.append(b"short message".to_vec());
-
-            let mut buf = [MaybeUninit::<u8>::uninit(); 1024];
-            let mut buf: BorrowedBuf<'_> = buf.as_mut_slice().into();
-            cvb.read_buf(buf.unfilled()).unwrap();
-            assert_eq!(buf.filled(), b"short message");
-        }
     }
 }

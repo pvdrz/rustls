@@ -9,7 +9,7 @@
 /// that is sensible outside of example code.
 use std::sync::Arc;
 
-use std::io::{stdout, Read, Write};
+use std::io::{Read, Write};
 use std::net::TcpStream;
 
 use rustls::crypto::ring::Ring;
@@ -34,9 +34,12 @@ fn main() {
         .with_no_client_auth();
 
     let server_name = "www.rust-lang.org".try_into().unwrap();
+    eprintln!("--- before ClientConnection::new ---");
     let mut conn = rustls::ClientConnection::new(Arc::new(config), server_name).unwrap();
     let mut sock = TcpStream::connect("www.rust-lang.org:443").unwrap();
+    eprintln!("--- before Stream::new ---");
     let mut tls = rustls::Stream::new(&mut conn, &mut sock);
+    eprintln!("--- before Stream::write_all ---");
     tls.write_all(
         concat!(
             "GET / HTTP/1.1\r\n",
@@ -48,17 +51,18 @@ fn main() {
         .as_bytes(),
     )
     .unwrap();
-    let ciphersuite = tls
-        .conn
-        .negotiated_cipher_suite()
-        .unwrap();
-    writeln!(
-        &mut std::io::stderr(),
-        "Current ciphersuite: {:?}",
-        ciphersuite.suite()
-    )
-    .unwrap();
+    // let ciphersuite = tls
+    //     .conn
+    //     .negotiated_cipher_suite()
+    //     .unwrap();
+    // writeln!(
+    //     &mut std::io::stderr(),
+    //     "Current ciphersuite: {:?}",
+    //     ciphersuite.suite()
+    // )
+    // .unwrap();
     let mut plaintext = Vec::new();
+    eprintln!("--- before Stream::read_to_end ---");
     tls.read_to_end(&mut plaintext).unwrap();
-    stdout().write_all(&plaintext).unwrap();
+    // stdout().write_all(&plaintext).unwrap();
 }

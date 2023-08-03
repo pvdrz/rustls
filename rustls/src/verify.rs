@@ -383,6 +383,9 @@ impl ServerCertVerifier for WebPkiVerifier {
         ocsp_response: &[u8],
         now: SystemTime,
     ) -> Result<ServerCertVerified, Error> {
+        let scope = crate::Scope::current();
+        eprintln!("{scope}<dyn ServerCertVerifier>::verify_server_cert() <<<IO>>>");
+
         let cert = ParsedCertificate::try_from(end_entity)?;
 
         verify_server_cert_signed_by_trust_anchor(&cert, &self.roots, intermediates, now)?;

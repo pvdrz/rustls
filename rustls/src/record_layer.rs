@@ -159,6 +159,9 @@ impl RecordLayer {
         &mut self,
         encr: OpaqueMessage,
     ) -> Result<Option<Decrypted>, Error> {
+        let indent = crate::Scope::current();
+        let encr_len = encr.payload.0.len();
+
         if self.decrypt_state != DirectionState::Active {
             return Ok(Some(Decrypted {
                 want_close_before_decrypt: false,
@@ -182,6 +185,11 @@ impl RecordLayer {
             .decrypt(encr, self.read_seq)
         {
             Ok(plaintext) => {
+                eprintln!(
+                    "{indent}RecordLayer::decrypt_incoming(encr.len={encr_len}) -> decr.len={}",
+                    plaintext.payload.0.len(),
+                );
+
                 self.read_seq += 1;
                 Ok(Some(Decrypted {
                     want_close_before_decrypt,
@@ -201,13 +209,24 @@ impl RecordLayer {
     /// `plain` is a TLS message we'd like to send.  This function
     /// panics if the requisite keying material hasn't been established yet.
     pub(crate) fn encrypt_outgoing(&mut self, plain: BorrowedPlainMessage) -> OpaqueMessage {
+        let indent = crate::Scope::current();
+        let plain_len = plain.payload.len();
+
         debug_assert!(self.encrypt_state == DirectionState::Active);
         assert!(!self.encrypt_exhausted());
         let seq = self.write_seq;
         self.write_seq += 1;
-        self.message_encrypter
+        let m = self
+            .message_encrypter
             .encrypt(plain, seq)
-            .unwrap()
+            .unwrap();
+
+        eprintln!(
+            "{indent}RecordLayer::encrypt_outgoing(plain.len={plain_len}) -> encr.len={}",
+            m.payload.0.len()
+        );
+
+        m
     }
 }
 

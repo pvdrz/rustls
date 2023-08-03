@@ -153,6 +153,12 @@ impl CommonState {
         mut state: Box<dyn State<Data>>,
         data: &mut Data,
     ) -> Result<Box<dyn State<Data>>, Error> {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}ConnectionCommon::process_main_protocol(msg.typ={:?})",
+            msg.payload.content_type()
+        );
+
         // For TLS1.2, outside of the handshake, send rejection alerts for
         // renegotiation requests.  These can occur any time.
         if self.may_receive_application_data && !self.is_tls13() {
@@ -186,11 +192,22 @@ impl CommonState {
     /// If internal buffers are too small, this function will not accept
     /// all the data.
     pub(crate) fn send_some_plaintext(&mut self, data: &[u8]) -> usize {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}CommonState::send_some_plaintext(data.len={})",
+            data.len()
+        );
         self.perhaps_write_key_update();
         self.send_plain(data, Limit::Yes)
     }
 
     pub(crate) fn send_early_plaintext(&mut self, data: &[u8]) -> usize {
+        let indent = crate::Scope::current();
+        eprintln!(
+            "{indent}CommonState::send_early_plaintext(data.len={})",
+            data.len()
+        );
+
         debug_assert!(self.early_traffic);
         debug_assert!(self.record_layer.is_encrypting());
 
@@ -230,6 +247,12 @@ impl CommonState {
 
     /// Like send_msg_encrypt, but operate on an appdata directly.
     fn send_appdata_encrypt(&mut self, payload: &[u8], limit: Limit) -> usize {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}CommonState::send_appdata_encrypt(payload.len={}, limit={limit:?})",
+            payload.len()
+        );
+
         // Here, the limit on sendable_tls applies to encrypted data,
         // but we're respecting it for plaintext data -- so we'll
         // be out by whatever the cipher+record overhead is.  That's a
@@ -254,6 +277,13 @@ impl CommonState {
     }
 
     fn send_single_fragment(&mut self, m: BorrowedPlainMessage) {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}CommonState::send_single_frame(m.payload.len={}, m.typ={:?})",
+            m.payload.len(),
+            m.typ
+        );
+
         // Close connection once we start to run out of
         // sequence space.
         if self
@@ -279,6 +309,11 @@ impl CommonState {
     /// Returns the number of bytes written from `data`: this might
     /// be less than `data.len()` if buffer limits were exceeded.
     fn send_plain(&mut self, data: &[u8], limit: Limit) -> usize {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}CommonState::send_plain(data.len={}, limit={limit:?})",
+            data.len()
+        );
         if !self.may_send_application_data {
             // If we haven't completed handshaking, buffer
             // plaintext to send once we do.
@@ -375,11 +410,23 @@ impl CommonState {
 
     // Put m into sendable_tls for writing.
     fn queue_tls_message(&mut self, m: OpaqueMessage) {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}CommonState::queue_tls_message(m.payload.len={}, m.typ={:?})",
+            m.payload.0.len(),
+            m.typ
+        );
         self.sendable_tls.append(m.encode());
     }
 
     /// Send a raw TLS message, fragmenting it if needed.
     pub(crate) fn send_msg(&mut self, m: Message, must_encrypt: bool) {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}CommonState::send_msg(m.typ={:?}, must_encrypt={must_encrypt})",
+            m.payload.content_type()
+        );
+
         #[cfg(feature = "quic")]
         {
             if let Protocol::Quic = self.protocol {
@@ -413,6 +460,11 @@ impl CommonState {
     }
 
     pub(crate) fn take_received_plaintext(&mut self, bytes: Payload) {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}CommonState::take_received_plaintext(bytes.len={})",
+            bytes.0.len()
+        );
         self.received_plaintext.append(bytes.0);
     }
 
@@ -674,6 +726,7 @@ pub(crate) enum Protocol {
     Quic,
 }
 
+#[derive(Debug)]
 enum Limit {
     Yes,
     No,

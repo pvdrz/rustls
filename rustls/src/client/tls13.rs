@@ -76,6 +76,9 @@ pub(super) fn handle_server_hello<C: CryptoProvider>(
     our_key_share: C::KeyExchange,
     mut sent_tls13_fake_ccs: bool,
 ) -> hs::NextStateOrError {
+    let scope = crate::Scope::current();
+    eprintln!("{scope}tls13::handle_server_hello",);
+
     validate_server_hello(cx.common, server_hello)?;
 
     let their_key_share = server_hello
@@ -379,6 +382,12 @@ struct ExpectEncryptedExtensions<C: CryptoProvider> {
 
 impl<C: CryptoProvider> State<ClientConnectionData> for ExpectEncryptedExtensions<C> {
     fn handle(mut self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> hs::NextStateOrError {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}ExpectEncryptedExtensions::handle(m.typ={:?})",
+            m.payload.content_type()
+        );
+
         let exts = require_handshake_msg!(
             m,
             HandshakeType::EncryptedExtensions,
@@ -470,6 +479,12 @@ struct ExpectCertificateOrCertReq<C: CryptoProvider> {
 
 impl<C: CryptoProvider> State<ClientConnectionData> for ExpectCertificateOrCertReq<C> {
     fn handle(self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> hs::NextStateOrError {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}ExpectCertificateOrCertReq::handle(m.typ={:?})",
+            m.payload.content_type()
+        );
+
         match m.payload {
             MessagePayload::Handshake {
                 parsed:
@@ -530,6 +545,12 @@ struct ExpectCertificateRequest<C: CryptoProvider> {
 
 impl<C: CryptoProvider> State<ClientConnectionData> for ExpectCertificateRequest<C> {
     fn handle(mut self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> hs::NextStateOrError {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}ExpectCertificateRequest::handle(m.typ={:?})",
+            m.payload.content_type()
+        );
+
         let certreq = &require_handshake_msg!(
             m,
             HandshakeType::CertificateRequest,
@@ -600,6 +621,12 @@ struct ExpectCertificate<C: CryptoProvider> {
 
 impl<C: CryptoProvider> State<ClientConnectionData> for ExpectCertificate<C> {
     fn handle(mut self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> hs::NextStateOrError {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}ExpectCertificate::handle(m.typ={:?})",
+            m.payload.content_type()
+        );
+
         let cert_chain = require_handshake_msg!(
             m,
             HandshakeType::Certificate,
@@ -654,6 +681,12 @@ struct ExpectCertificateVerify<C: CryptoProvider> {
 
 impl<C: CryptoProvider> State<ClientConnectionData> for ExpectCertificateVerify<C> {
     fn handle(mut self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> hs::NextStateOrError {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}ExpectCertificateVerify::handle(m.typ={:?})",
+            m.payload.content_type()
+        );
+
         let cert_verify = require_handshake_msg!(
             m,
             HandshakeType::CertificateVerify,
@@ -822,6 +855,12 @@ struct ExpectFinished<C: CryptoProvider> {
 
 impl<C: CryptoProvider> State<ClientConnectionData> for ExpectFinished<C> {
     fn handle(self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> hs::NextStateOrError {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}ExpectFinished::handle(m.typ={:?})",
+            m.payload.content_type()
+        );
+
         let mut st = *self;
         let finished =
             require_handshake_msg!(m, HandshakeType::Finished, HandshakePayload::Finished)?;
@@ -1029,6 +1068,12 @@ impl ExpectTraffic {
 
 impl State<ClientConnectionData> for ExpectTraffic {
     fn handle(mut self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> hs::NextStateOrError {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}ExpectTraffic::handle(m.typ={:?})",
+            m.payload.content_type()
+        );
+
         match m.payload {
             MessagePayload::ApplicationData(payload) => cx
                 .common
@@ -1084,6 +1129,12 @@ struct ExpectQuicTraffic(ExpectTraffic);
 #[cfg(feature = "quic")]
 impl State<ClientConnectionData> for ExpectQuicTraffic {
     fn handle(mut self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> hs::NextStateOrError {
+        let scope = crate::Scope::current();
+        eprintln!(
+            "{scope}ExpectQuicTraffic::handle(m.typ={:?})",
+            m.payload.content_type()
+        );
+
         let nst = require_handshake_msg!(
             m,
             HandshakeType::NewSessionTicket,
