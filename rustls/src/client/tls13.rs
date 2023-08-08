@@ -384,8 +384,8 @@ impl<C: CryptoProvider> State<ClientConnectionData> for ExpectEncryptedExtension
     fn handle(mut self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> hs::NextStateOrError {
         let scope = crate::Scope::current();
         eprintln!(
-            "{scope}ExpectEncryptedExtensions::handle(m.typ={:?})",
-            m.payload.content_type()
+            "{scope}ExpectEncryptedExtensions::handle(m.typ={})",
+            m.payload.content_type_str()
         );
 
         let exts = require_handshake_msg!(
@@ -481,8 +481,8 @@ impl<C: CryptoProvider> State<ClientConnectionData> for ExpectCertificateOrCertR
     fn handle(self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> hs::NextStateOrError {
         let scope = crate::Scope::current();
         eprintln!(
-            "{scope}ExpectCertificateOrCertReq::handle(m.typ={:?})",
-            m.payload.content_type()
+            "{scope}ExpectCertificateOrCertReq::handle(m.typ={})",
+            m.payload.content_type_str()
         );
 
         match m.payload {
@@ -547,8 +547,8 @@ impl<C: CryptoProvider> State<ClientConnectionData> for ExpectCertificateRequest
     fn handle(mut self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> hs::NextStateOrError {
         let scope = crate::Scope::current();
         eprintln!(
-            "{scope}ExpectCertificateRequest::handle(m.typ={:?})",
-            m.payload.content_type()
+            "{scope}ExpectCertificateRequest::handle(m.typ={})",
+            m.payload.content_type_str()
         );
 
         let certreq = &require_handshake_msg!(
@@ -623,8 +623,8 @@ impl<C: CryptoProvider> State<ClientConnectionData> for ExpectCertificate<C> {
     fn handle(mut self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> hs::NextStateOrError {
         let scope = crate::Scope::current();
         eprintln!(
-            "{scope}ExpectCertificate::handle(m.typ={:?})",
-            m.payload.content_type()
+            "{scope}ExpectCertificate::handle(m.typ={})",
+            m.payload.content_type_str()
         );
 
         let cert_chain = require_handshake_msg!(
@@ -683,8 +683,8 @@ impl<C: CryptoProvider> State<ClientConnectionData> for ExpectCertificateVerify<
     fn handle(mut self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> hs::NextStateOrError {
         let scope = crate::Scope::current();
         eprintln!(
-            "{scope}ExpectCertificateVerify::handle(m.typ={:?})",
-            m.payload.content_type()
+            "{scope}ExpectCertificateVerify::handle(m.typ={})",
+            m.payload.content_type_str()
         );
 
         let cert_verify = require_handshake_msg!(
@@ -857,8 +857,8 @@ impl<C: CryptoProvider> State<ClientConnectionData> for ExpectFinished<C> {
     fn handle(self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> hs::NextStateOrError {
         let scope = crate::Scope::current();
         eprintln!(
-            "{scope}ExpectFinished::handle(m.typ={:?})",
-            m.payload.content_type()
+            "{scope}ExpectFinished::handle(m.typ={})",
+            m.payload.content_type_str()
         );
 
         let mut st = *self;
@@ -1070,8 +1070,8 @@ impl State<ClientConnectionData> for ExpectTraffic {
     fn handle(mut self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> hs::NextStateOrError {
         let scope = crate::Scope::current();
         eprintln!(
-            "{scope}ExpectTraffic::handle(m.typ={:?})",
-            m.payload.content_type()
+            "{scope}ExpectTraffic::handle(m.typ={})",
+            m.payload.content_type_str()
         );
 
         match m.payload {
@@ -1131,8 +1131,8 @@ impl State<ClientConnectionData> for ExpectQuicTraffic {
     fn handle(mut self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> hs::NextStateOrError {
         let scope = crate::Scope::current();
         eprintln!(
-            "{scope}ExpectQuicTraffic::handle(m.typ={:?})",
-            m.payload.content_type()
+            "{scope}ExpectQuicTraffic::handle(m.typ={})",
+            m.payload.content_type_str()
         );
 
         let nst = require_handshake_msg!(

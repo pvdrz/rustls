@@ -485,8 +485,8 @@ impl<C: CryptoProvider> State<ClientConnectionData> for ExpectServerHello<C> {
     fn handle(mut self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> NextStateOrError {
         let scope = crate::Scope::current();
         eprintln!(
-            "{scope}ExpectServerHello::handle(m.typ={:?})",
-            m.payload.content_type()
+            "{scope}ExpectServerHello::handle(m.typ={})",
+            m.payload.content_type_str()
         );
 
         let server_hello =
@@ -855,8 +855,8 @@ impl<C: CryptoProvider> State<ClientConnectionData> for ExpectServerHelloOrHello
     fn handle(self: Box<Self>, cx: &mut ClientContext<'_>, m: Message) -> NextStateOrError {
         let scope = crate::Scope::current();
         eprintln!(
-            "{scope}ExpectServerHelloOrHelloRetryRequest::handle(m.typ={:?})",
-            m.payload.content_type()
+            "{scope}ExpectServerHelloOrHelloRetryRequest::handle(m.typ={})",
+            m.payload.content_type_str()
         );
 
         match m.payload {

@@ -155,8 +155,8 @@ impl CommonState {
     ) -> Result<Box<dyn State<Data>>, Error> {
         let scope = crate::Scope::current();
         eprintln!(
-            "{scope}ConnectionCommon::process_main_protocol(msg.typ={:?})",
-            msg.payload.content_type()
+            "{scope}ConnectionCommon::process_main_protocol(msg.typ={})",
+            msg.payload.content_type_str()
         );
 
         // For TLS1.2, outside of the handshake, send rejection alerts for
@@ -423,8 +423,8 @@ impl CommonState {
     pub(crate) fn send_msg(&mut self, m: Message, must_encrypt: bool) {
         let scope = crate::Scope::current();
         eprintln!(
-            "{scope}CommonState::send_msg(m.typ={:?}, must_encrypt={must_encrypt})",
-            m.payload.content_type()
+            "{scope}CommonState::send_msg(m.typ={}, must_encrypt={must_encrypt})",
+            m.payload.content_type_str()
         );
 
         #[cfg(feature = "quic")]

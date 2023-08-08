@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::enums::ProtocolVersion;
 use crate::enums::{AlertDescription, ContentType, HandshakeType};
 use crate::error::{Error, InvalidMessage};
@@ -64,6 +66,15 @@ impl MessagePayload {
             Self::Handshake { .. } => ContentType::Handshake,
             Self::ChangeCipherSpec(_) => ContentType::ChangeCipherSpec,
             Self::ApplicationData(_) => ContentType::ApplicationData,
+        }
+    }
+
+    pub fn content_type_str(&self) -> Cow<str> {
+        match self {
+            Self::Alert(_) => "Alert".into(),
+            Self::Handshake { parsed, .. } => format!("Handshake::{:?}", parsed.typ).into(),
+            Self::ChangeCipherSpec(_) => "ChangeCipherSpec".into(),
+            Self::ApplicationData(_) => "ApplicationData".into(),
         }
     }
 }
