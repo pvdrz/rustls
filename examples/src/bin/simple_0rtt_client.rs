@@ -1,3 +1,4 @@
+use std::fs;
 use std::sync::Arc;
 
 use std::io::{BufRead, BufReader, Write};
@@ -7,12 +8,16 @@ use rustls::crypto::ring::Ring;
 use rustls::crypto::CryptoProvider;
 use rustls::{OwnedTrustAnchor, RootCertStore};
 
-fn start_connection(config: &Arc<rustls::ClientConfig<impl CryptoProvider>>, domain_name: &str) {
+fn start_connection(
+    config: &Arc<rustls::ClientConfig<impl CryptoProvider>>,
+    domain_name: &str,
+    port: u16,
+) {
     let server_name = domain_name
         .try_into()
         .expect("invalid DNS name");
     let mut conn = rustls::ClientConnection::new(Arc::clone(config), server_name).unwrap();
-    let mut sock = TcpStream::connect(format!("{}:443", domain_name)).unwrap();
+    let mut sock = TcpStream::connect(format!("{}:{}", domain_name, port)).unwrap();
     sock.set_nodelay(true).unwrap();
     let request = format!(
         "GET / HTTP/1.1\r\n\
@@ -57,20 +62,33 @@ fn start_connection(config: &Arc<rustls::ClientConfig<impl CryptoProvider>>, dom
 }
 
 fn main() {
+    let hostname = "localhost";
+    let port = 1443;
+
+    let args = std::env::args().collect::<Vec<String>>();
+    let cafile_path = args.last();
+
     env_logger::init();
 
     let mut root_store = RootCertStore::empty();
-    root_store.add_server_trust_anchors(
-        webpki_roots::TLS_SERVER_ROOTS
-            .iter()
-            .map(|ta| {
-                OwnedTrustAnchor::from_subject_spki_name_constraints(
-                    ta.subject,
-                    ta.spki,
-                    ta.name_constraints,
-                )
-            }),
-    );
+
+    if let Some(cafile) = cafile_path {
+        let certfile = fs::File::open(cafile).expect("Cannot open CA file");
+        let mut reader = BufReader::new(certfile);
+        root_store.add_parsable_certificates(rustls_pemfile::certs(&mut reader).unwrap());
+    } else {
+        root_store.add_server_trust_anchors(
+            webpki_roots::TLS_SERVER_ROOTS
+                .iter()
+                .map(|ta| {
+                    OwnedTrustAnchor::from_subject_spki_name_constraints(
+                        ta.subject,
+                        ta.spki,
+                        ta.name_constraints,
+                    )
+                }),
+        );
+    }
 
     let mut config = rustls::ClientConfig::<Ring>::builder()
         .with_safe_defaults()
@@ -85,7 +103,7 @@ fn main() {
     // second will use early data if the server supports it.
 
     println!("* Sending first request:");
-    start_connection(&config, "jbp.io");
+    start_connection(&config, hostname, port);
     println!("* Sending second request:");
-    start_connection(&config, "jbp.io");
+    start_connection(&config, hostname, port);
 }

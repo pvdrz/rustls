@@ -19,3 +19,11 @@ $ cargo r --bin tlsclient-mio -- --http --port 1443 localhost
 $ # happy path
 $ cargo r --bin tlsclient-mio -- --http --port 1443 --cafile $(mkcert -CAROOT)/rootCA.pem localhost
 ```
+
+Running the 0-RTT exammple with the generated cafile:
+
+```console
+$ cargo r --bin simple_0rtt_client -- $(mkcert -CAROOT)/rootCA.pem
+```
+
+The hostname and port being used are `"localhost"` and `1443`.
