@@ -62,11 +62,11 @@ fn start_connection(
 }
 
 fn main() {
-    let hostname = "localhost";
-    let port = 1443;
+    //let (hostname, port) = ("jbp.io", 443);
+    let (hostname, port) = ("localhost", 1443);
 
     let args = std::env::args().collect::<Vec<String>>();
-    let cafile_path = args.last();
+    let cafile_path = args.get(1);
 
     env_logger::init();
 
