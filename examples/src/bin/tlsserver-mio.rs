@@ -177,6 +177,7 @@ impl OpenConnection {
         // see if the backend is readable too.
         if ev.is_readable() {
             self.do_tls_read();
+            self.try_early_data_read();
             self.try_plain_read();
             self.try_back_read();
         }
@@ -251,7 +252,7 @@ impl OpenConnection {
                     .unwrap();
 
                 debug!("plaintext read {:?}", buf.len());
-                self.incoming_plaintext(&buf);
+                self.incoming_plaintext(&buf, false);
             }
         }
     }
@@ -291,8 +292,19 @@ impl OpenConnection {
         };
     }
 
+    fn try_early_data_read(&mut self) {
+        if let Some(mut reader) = self.tls_conn.early_data() {
+            let mut buf = Vec::new();
+            reader.read_to_end(&mut buf).unwrap();
+            if !buf.is_empty() {
+                debug!("early data read {:?}", buf.len());
+                self.incoming_plaintext(&buf, true);
+            }
+        }
+    }
+
     /// Process some amount of received plaintext.
-    fn incoming_plaintext(&mut self, buf: &[u8]) {
+    fn incoming_plaintext(&mut self, buf: &[u8], is_early_data: bool) {
         match self.mode {
             ServerMode::Echo => {
                 self.tls_conn
@@ -301,7 +313,7 @@ impl OpenConnection {
                     .unwrap();
             }
             ServerMode::Http => {
-                self.send_http_response_once();
+                self.send_http_response_once(is_early_data);
             }
             ServerMode::Forward(_) => {
                 self.back
@@ -313,7 +325,7 @@ impl OpenConnection {
         }
     }
 
-    fn send_http_response_once(&mut self) {
+    fn send_http_response_once(&mut self, is_early_data: bool) {
         let response =
             b"HTTP/1.0 200 OK\r\nConnection: close\r\n\r\nHello world from rustls tlsserver\r\n";
         if !self.sent_http_response {
@@ -322,7 +334,9 @@ impl OpenConnection {
                 .write_all(response)
                 .unwrap();
             self.sent_http_response = true;
-            self.tls_conn.send_close_notify();
+            if !is_early_data {
+                self.tls_conn.send_close_notify();
+            }
         }
     }
 
@@ -443,8 +457,7 @@ Options:
                            SUITE instead.  May be used multiple times.
     --proto PROTOCOL       Negotiate PROTOCOL using ALPN.
                            May be used multiple times.
-    --max-early-data MAX   Set the maximum amount of early data bytes that can be received. The
-                           default is 0.
+    --max-early-data MAX   Set the maximum amount of early data bytes that can be received [default: 0].
     --verbose              Emit log output.
     --version, -v          Show tool version.
     --help, -h             Show this screen.
@@ -648,7 +661,6 @@ fn make_config(args: &Args) -> Arc<rustls::ServerConfig<Ring>> {
         .iter()
         .map(|proto| proto.as_bytes().to_vec())
         .collect::<Vec<_>>();
-
 
     Arc::new(config)
 }
