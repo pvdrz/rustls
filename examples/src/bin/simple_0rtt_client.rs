@@ -62,8 +62,8 @@ fn start_connection(
 }
 
 fn main() {
-    //let (hostname, port) = ("jbp.io", 443);
-    let (hostname, port) = ("localhost", 1443);
+    let hostname;
+    let port;
 
     let args = std::env::args().collect::<Vec<String>>();
     let cafile_path = args.get(1);
@@ -76,6 +76,9 @@ fn main() {
         let certfile = fs::File::open(cafile).expect("Cannot open CA file");
         let mut reader = BufReader::new(certfile);
         root_store.add_parsable_certificates(rustls_pemfile::certs(&mut reader).unwrap());
+
+        hostname = "localhost";
+        port = 1443;
     } else {
         root_store.add_server_trust_anchors(
             webpki_roots::TLS_SERVER_ROOTS
@@ -88,6 +91,8 @@ fn main() {
                     )
                 }),
         );
+        hostname = "jbp.io";
+        port = 443;
     }
 
     let mut config = rustls::ClientConfig::<Ring>::builder()
