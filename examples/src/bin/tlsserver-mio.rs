@@ -458,6 +458,7 @@ Options:
     --proto PROTOCOL       Negotiate PROTOCOL using ALPN.
                            May be used multiple times.
     --max-early-data MAX   Set the maximum amount of early data bytes that can be received [default: 0].
+    --send-half-rtt-data   Allow sending data before the handshake is done.
     --verbose              Emit log output.
     --version, -v          Show tool version.
     --help, -h             Show this screen.
@@ -481,6 +482,7 @@ struct Args {
     flag_resumption: bool,
     flag_tickets: bool,
     flag_max_early_data: Option<u32>,
+    flag_send_half_rtt_data: bool, 
     arg_fport: Option<u16>,
 }
 
@@ -654,6 +656,10 @@ fn make_config(args: &Args) -> Arc<rustls::ServerConfig<Ring>> {
 
     if let Some(max_early_data) = args.flag_max_early_data {
         config.max_early_data_size = max_early_data;
+    }
+
+    if args.flag_send_half_rtt_data {
+        config.send_half_rtt_data = true;
     }
 
     config.alpn_protocols = args
