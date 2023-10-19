@@ -1460,7 +1460,7 @@ pub enum KeyExchangeAlgorithm {
 // We don't support arbitrary curves.  It's a terrible
 // idea and unnecessary attack surface.  Please,
 // get a grip.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ECParameters {
     pub curve_type: ECCurveType,
     pub named_group: NamedGroup,
@@ -1503,7 +1503,7 @@ impl Codec for ClientECDHParams {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ServerECDHParams {
     pub curve_params: ECParameters,
     pub public: PayloadU8,
@@ -1538,7 +1538,7 @@ impl Codec for ServerECDHParams {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ECDHEServerKeyExchange {
     pub params: ServerECDHParams,
     pub dss: DigitallySignedStruct,
@@ -1558,7 +1558,7 @@ impl Codec for ECDHEServerKeyExchange {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ServerKeyExchangePayload {
     ECDHE(ECDHEServerKeyExchange),
     Unknown(Payload),
