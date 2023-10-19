@@ -10,6 +10,7 @@ use std::sync::Arc;
 use crate::client::tls12::ServerKxDetails;
 use crate::crypto::cipher::OpaqueMessage;
 use crate::msgs::base::{Payload, PayloadU8};
+use crate::msgs::ccs::ChangeCipherSpecPayload;
 use crate::msgs::codec::{Codec, Reader};
 use crate::msgs::enums::ECPointFormat;
 use crate::msgs::handshake::{
@@ -48,6 +49,8 @@ enum CommonState {
     },
     WriteClientKeyExchange(ServerKxDetails),
     SendClientKeyExchange,
+    WriteChangeCipherSpec,
+    SendChangeCipherSpec,
 }
 
 /// both `LlClientConnection` and `LlServerConnection` implement `DerefMut<Target = LlConnectionCommon>`
@@ -75,13 +78,17 @@ impl LlConnectionCommon {
     ) -> Result<Status<'c, 'i>, Error> {
         loop {
             match self.state {
-                CommonState::StartHandshake | CommonState::WriteClientKeyExchange(_) => {
+                CommonState::StartHandshake
+                | CommonState::WriteClientKeyExchange(_)
+                | CommonState::WriteChangeCipherSpec => {
                     return Ok(Status {
                         discard: 0,
                         state: State::MustEncryptTlsData(MustEncryptTlsData { conn: self }),
                     });
                 }
-                CommonState::SendClientHello | CommonState::SendClientKeyExchange => {
+                CommonState::SendClientHello
+                | CommonState::SendClientKeyExchange
+                | CommonState::SendChangeCipherSpec => {
                     return Ok(Status {
                         discard: 0,
                         state: State::MustTransmitTlsData(MustTransmitTlsData { conn: self }),
@@ -376,6 +383,14 @@ impl LlConnectionCommon {
                     payload: MessagePayload::handshake(payload),
                 }
             }
+            CommonState::WriteChangeCipherSpec => {
+                self.state = CommonState::SendChangeCipherSpec;
+
+                Message {
+                    version: ProtocolVersion::TLSv1_2,
+                    payload: MessagePayload::ChangeCipherSpec(ChangeCipherSpecPayload {}),
+                }
+            }
             _ => unreachable!(),
         };
 
@@ -402,7 +417,12 @@ impl LlConnectionCommon {
             CommonState::SendClientHello => {
                 self.state = CommonState::WaitServerHello;
             }
-            CommonState::SendClientKeyExchange => todo!(),
+            CommonState::SendClientKeyExchange => {
+                self.state = CommonState::WriteChangeCipherSpec;
+            }
+            CommonState::SendChangeCipherSpec => {
+                todo!()
+            }
             _ => unreachable!(),
         }
     }
