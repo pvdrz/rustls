@@ -1503,7 +1503,7 @@ impl Codec for ClientECDHParams {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ServerECDHParams {
     pub curve_params: ECParameters,
     pub public: PayloadU8,
@@ -1538,7 +1538,7 @@ impl Codec for ServerECDHParams {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ECDHEServerKeyExchange {
     pub params: ServerECDHParams,
     pub dss: DigitallySignedStruct,
@@ -1558,7 +1558,7 @@ impl Codec for ECDHEServerKeyExchange {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum ServerKeyExchangePayload {
     ECDHE(ECDHEServerKeyExchange),
     Unknown(Payload),
